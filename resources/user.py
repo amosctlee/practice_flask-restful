@@ -1,85 +1,102 @@
 from flask_restful import Resource
-from flask_restful import reqparse
+from flask import request
+
+from models.schema.user_schema import UserSchema
+from marshmallow import ValidationError
+
+from models.user import UserModel
 
 
-users = [
-    {'name': 'lucien'}
-]
+user_schema = UserSchema(many=False)
+
 
 class Users(Resource):
     def get(self):
+        users = UserModel.get_all_user()
         return {
             'message': '',
-            'users': users
+            'users': user_schema.dump(users, many=True)
         }
 
 class User(Resource):
-    parser = reqparse.RequestParser()
 
-    parser.add_argument('email', 
-        required=True,
-        location=['form', 'json'],
-        help='Email is required'
-    )
-    parser.add_argument('password', 
-        required=True, 
-        location=['form', 'json'],
-        help='Password is required'
-    )
+    @classmethod
+    def get_param(cls):
+        data = request.get_json(force=False)
+        if data is None:
+            data = request.form
+        return data
 
     def get(self, name):
-        find = [item for item in users if item['name'] == name]
-        if len(find) == 0:
+        user = UserModel.get_user(name)
+        if not user:
             return {
                 'message': 'username not exist!'
             }, 403
-        user = find[0]
+        return {
+            'message': '',
+            'user': user_schema.dump(user)
+        }
+
+
+    def post(self, name):
+        json_data = User.get_param()
+        
+        # marshmallow 3 開始沒有errors 欄位了
+        # 所以改成以下用法
+        try:
+            data = user_schema.load(json_data)
+        except ValidationError as err:
+            errors = err.messages
+            valid_data = err.valid_data
+            print(errors)
+            print(valid_data)
+            return {
+                'message': errors
+            }, 433
+        
+        user = UserModel(name, data['email'], data['password'])
+        user.add_user()
+
+        return {
+            'message': 'Insert user success',
+            'user': user_schema.dump(user)
+        }
+
+    def put(self, name):
+        json_data = User.get_param()
+
+        # marshmallow 3 開始沒有errors 欄位了
+        # 所以改成以下用法
+        try:
+            data = user_schema.load(json_data)
+        except ValidationError as err:
+            errors = err.messages
+            valid_data = err.valid_data
+            print(errors)
+            print(valid_data)
+            return {
+                'message': errors
+            }, 433
+
+        user = UserModel.get_user(name)
         if not user:
             return {
                 'message': 'username not exist!'
             }, 403
 
-        return {
-            'message': '',
-            'user': user
-        }
-
-
-    def post(self, name):
-        arg = self.parser.parse_args()
-        user = {
-            'name': name,
-            'email': arg['email'],
-            'password': arg['password']
-        }
-        global users
-        users.append(user)
-        return {
-            'message': 'Insert user success',
-            'user': user
-        }
-
-    def put(self, name):
-        arg = self.parser.parse_args()
-        find = [item for item in users if item['name'] == name]
-        if len(find) == 0:
-            return {
-                'message': 'username not exist!'
-            }, 403
-
-        user = find[0]
-        user['email'] = arg['email']
-        user['password'] = arg['password']
+        user.email = data['email']
+        user.password = data['password']
 
         return {
             'message': 'Update user success',
-            'user': user
+            'user': user_schema.dump(user)
         }
 
 
     def delete(self, name):
-        global users
-        users = [item for item in users if item['name'] != name]
+        UserModel.delete_user(name)
+
         return {
             'message': 'Delete done!'
         }
