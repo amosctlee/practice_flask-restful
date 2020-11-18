@@ -2,6 +2,9 @@ from flask import Flask
 from flask_restful import Api
 
 from resources.user import User, Users
+from common.db import db
+from common.ma import ma
+
 
 app = Flask(__name__)
 api = Api(app)
@@ -9,7 +12,13 @@ api = Api(app)
 api.add_resource(User, '/api/user/<string:name>')
 api.add_resource(Users, '/api/users/')
 
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///user.db'
+
+db.init_app(app)
+ma.init_app(app)
+
+with app.app_context():
+    db.create_all()
+
 if __name__ == "__main__":
-    from common.ma import ma
-    ma.init_app(app)
     app.run()

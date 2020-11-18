@@ -21,10 +21,11 @@ class Users(Resource):
 class User(Resource):
 
     @classmethod
-    def get_param(cls):
+    def get_param(cls, name):
         data = request.get_json(force=False)
         if data is None:
             data = request.form
+        data['name'] = name
         return data
 
     def get(self, name):
@@ -40,7 +41,7 @@ class User(Resource):
 
 
     def post(self, name):
-        json_data = User.get_param()
+        json_data = User.get_param(name)
         
         # marshmallow 3 開始沒有errors 欄位了
         # 所以改成以下用法
@@ -64,8 +65,7 @@ class User(Resource):
         }
 
     def put(self, name):
-        json_data = User.get_param()
-
+        json_data = User.get_param(name)
         # marshmallow 3 開始沒有errors 欄位了
         # 所以改成以下用法
         try:
@@ -96,7 +96,12 @@ class User(Resource):
 
 
     def delete(self, name):
-        UserModel.delete_user(name)
+        user = UserModel.get_user(name)
+        if not user:
+            return {
+                'message': 'username not exist!'
+            }, 403
+        user.delete_user()
 
         return {
             'message': 'Delete done!'
