@@ -1,0 +1,7 @@
+flask
+flask-restful
+flask-marshmallow>=3.0
+flask-sqlalchemy
+marshmallow-sqlalchemy
+pymysql
+flask-migrate

@@ -1,0 +1,34 @@
+version: '3.1'
+
+services:
+
+  # py:
+  #   image: python:3.8
+  #   container_name: myapi
+  #   restart: always
+  #   ports:
+  #     - 5000:5000
+  #   tty: true
+  #   volumes: 
+  #     - ./:/myapi
+
+  db:
+    image: mysql
+    container_name: mysql_db
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_DATABASE: mydb
+      MYSQL_ROOT_PASSWORD: example
+    ports:
+      - 3307:3306
+      - 33070:33060
+    # volumes:
+    #   - ./mysql_data:/var/lib/mysql
+
+  adminer:
+    image: adminer
+    container_name: db_adminer
+    restart: always
+    ports:
+      - 8080:8080
