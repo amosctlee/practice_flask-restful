@@ -87,6 +87,7 @@ class User(Resource):
 
         user.email = data['email']
         user.password = data['password']
+        user.update_user()
 
         return {
             'message': 'Update user success',
