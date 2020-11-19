@@ -6,6 +6,7 @@ from marshmallow import ValidationError
 
 from models.user import UserModel
 
+from werkzeug.datastructures import ImmutableMultiDict
 
 user_schema = UserSchema(many=False)
 
@@ -25,6 +26,8 @@ class User(Resource):
         data = request.get_json(force=False)
         if data is None:
             data = request.form
+            if isinstance(data, ImmutableMultiDict):
+                data = data.to_dict()
         data['name'] = name
         return data
 
